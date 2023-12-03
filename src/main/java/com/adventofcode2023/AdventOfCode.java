@@ -6,6 +6,7 @@ public class AdventOfCode {
 		System.out.println("Advent Of Code 2023");
 		new Day1();
 		new Day2();
+		new Day3();
 	}
 
 }
