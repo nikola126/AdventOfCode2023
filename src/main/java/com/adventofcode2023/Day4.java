@@ -36,7 +36,7 @@ public class Day4 {
             totalScore += new Card(index++, line).getPoints();
         }
 
-        System.out.println("Day 4 Part One: " + totalScore);
+        System.out.println("Day 4 Part 1: " + totalScore);
     }
 
     public void partTwo() throws FileNotFoundException {
@@ -67,7 +67,7 @@ public class Day4 {
             }
         }
 
-        System.out.println("Day 4 Part Two: " + countPlayed);
+        System.out.println("Day 4 Part 2: " + countPlayed);
     }
 
     @Getter
