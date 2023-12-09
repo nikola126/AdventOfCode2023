@@ -1,12 +1,11 @@
 package com.adventofcode2023;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.Stack;
 
 public class Day9 {
     public final String FILE_DIR = "./src/main/resources/day9.txt";
@@ -24,7 +23,7 @@ public class Day9 {
     public void partOne() throws FileNotFoundException {
         scanner = new Scanner(file);
 
-        List<List<Integer>> histories = new ArrayList<>();
+        int answer = 0;
 
         while (scanner.hasNextLine()) {
             String line = scanner.nextLine();
@@ -34,11 +33,6 @@ public class Day9 {
             for (String token : tokens)
                 history.add(Integer.parseInt(token.trim()));
 
-            histories.add(history);
-
-        }
-
-        for (List<Integer> history : histories) {
             Stack<List<Integer>> stack = new Stack<>();
             stack.push(history);
             boolean allZeroes = false;
@@ -54,14 +48,17 @@ public class Day9 {
                 stack.push(next);
             }
 
-            for (List<Integer> list : stack) {
-                for (Integer number : list) System.out.printf("%d ", number);
-                System.out.println();
+            stack.pop();
+            int lastOnTheRight = 0;
+            while (!stack.isEmpty()) {
+                List<Integer> list = stack.pop();
+                lastOnTheRight = list.getLast() + lastOnTheRight;
             }
 
-            System.out.println("--- --- --- --- ---");
-
+            answer += lastOnTheRight;
         }
+
+        System.out.println("Day 9 Part 1: " + answer);
     }
 
 }
