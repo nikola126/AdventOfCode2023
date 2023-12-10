@@ -19,6 +19,7 @@ public class Day10 {
     public Day10() {
         try {
             partOne();
+            partTwo();
         } catch (Exception e) {
             System.out.println("Error with Day 10: " + e.getMessage());
         }
@@ -47,7 +48,7 @@ public class Day10 {
             }
         }
 
-        Set<Point> visitedPoints = new HashSet<>();
+        Set<Point> visitedPoints = new LinkedHashSet<>();
 
         Point startingPoint = null;
         for (int row = 0; row < ROWS; row++) {
@@ -73,6 +74,59 @@ public class Day10 {
         System.out.println("Day 10 Part 1: " + ((loopLength / 2) + 1));
     }
 
+    public void partTwo() throws FileNotFoundException {
+        scanner = new Scanner(file);
+
+        List<String> lines = new ArrayList<>();
+        int ROWS = 0;
+        int COLS = 0;
+
+        while (scanner.hasNextLine()) {
+            String line = scanner.nextLine();
+            lines.add(line);
+            COLS = line.length();
+            ROWS += 1;
+        }
+
+        Character[][] grid = new Character[ROWS][COLS];
+
+        for (int row = 0; row < lines.size(); row++) {
+            String line = lines.get(row);
+            for (int col = 0; col < line.length(); col++) {
+                grid[row][col] = line.charAt(col);
+            }
+        }
+
+        Set<Point> visitedPoints = new LinkedHashSet<>();
+
+        Point startingPoint = null;
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                if (grid[row][col] == 'S') {
+                    startingPoint = new Point(row, col, 'S');
+                    break;
+                }
+            }
+        }
+
+        List<Point> accessiblePoints = determineAccessiblePoints(grid, ROWS, COLS, startingPoint);
+
+        visitedPoints.add(startingPoint);
+
+        Point nextPoint = accessiblePoints.stream().filter(p -> p.getC() != '.').findFirst().orElse(null);
+        visitedPoints.add(nextPoint);
+
+        while (nextPoint != null) {
+            nextPoint = navigateThruPipe(grid, ROWS, COLS, nextPoint, startingPoint, visitedPoints);
+        }
+
+        int area = shoelaceFormula(new ArrayList<>(visitedPoints));
+
+        int countInteriorPoints = picksTheoremForInteriorPoints(area, visitedPoints.size());
+
+        System.out.println("Day 10 Part 2: " + countInteriorPoints);
+    }
+
     private Point navigateThruPipe(Character[][] grid, int ROWS, int COLS, Point currentPoint, Point prevPoint, Set<Point> visited) {
         if (currentPoint == null)
             return null;
@@ -93,7 +147,9 @@ public class Day10 {
         if (visited.contains(nextPoint))
             return null;
 
-        visited.add(nextPoint);
+        if (nextPoint != null)
+            visited.add(nextPoint);
+
         return nextPoint;
     }
 
@@ -101,6 +157,16 @@ public class Day10 {
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {
                 System.out.printf("%c", grid[row][col]);
+            }
+            System.out.println();
+        }
+    }
+
+    private static void printLoop(Character[][] grid, int ROWS, int COLS, Set<Point> visited) {
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                Point point = new Point(row, col, grid[row][col]);
+                System.out.printf("%c", visited.contains(point) ? '▓' : grid[row][col]);
             }
             System.out.println();
         }
@@ -213,6 +279,33 @@ public class Day10 {
         }
 
         return accessiblePoints;
+    }
+
+    // https://en.m.wikipedia.org/wiki/Shoelace_formula
+    private int shoelaceFormula(List<Point> visited) {
+        int sum = 0;
+        Point a = null;
+        Point b = null;
+
+        for (int i = 0; i < visited.size() - 1; i++) {
+            a = visited.get(i);
+            b = visited.get(i + 1);
+
+            sum += (a.getX() * b.getY() - b.getX() * a.getY());
+        }
+
+        // Complete the shoelace using the first and last points
+        a = visited.getLast();
+        b = visited.getFirst();
+
+        sum += (a.getX() * b.getY() - b.getX() * a.getY());
+
+        return sum / 2;
+    }
+
+    // https://en.wikipedia.org/wiki/Pick%27s_theorem
+    private int picksTheoremForInteriorPoints(int area, int countBoundaryPoints) {
+        return area + 1 - countBoundaryPoints / 2;
     }
 
     @AllArgsConstructor
