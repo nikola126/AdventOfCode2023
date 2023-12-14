@@ -2,9 +2,7 @@ package com.adventofcode2023;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 public class Day14 {
     public final String FILE_DIR = "./src/main/resources/day14.txt";
@@ -17,6 +15,7 @@ public class Day14 {
     public Day14() {
         try {
             partOne();
+            partTwo();
         } catch (Exception e) {
             System.out.println("Error with Day 14: " + e.getMessage());
         }
@@ -31,6 +30,38 @@ public class Day14 {
         System.out.println("Day 14 Part 1: " + calculateWeightOnNorthColumns(grid));
     }
 
+    public void partTwo() throws FileNotFoundException {
+        scanner = new Scanner(file);
+
+        int BILLION = 1000000000;
+        Map<String, Character> grid = readGrid(scanner);
+        Map<Integer, String> previouslySeenMapConfigurations = new HashMap<>();
+
+        for (int i = 0; i < BILLION; i++) {
+            cycle(grid);
+            String mapState = convertToString(grid);
+
+            if (previouslySeenMapConfigurations.containsValue(mapState)) {
+                // If the current grid state has already been seen, a cycle has been found
+                int start = previouslySeenMapConfigurations.entrySet().stream()
+                        .filter(entry -> entry.getValue().equals(mapState))
+                        .findFirst().get().getKey();
+
+                // "Advance" to that position as many cycles forward as possible and finish the simulation
+                int remaining = (BILLION - 1 - i) % (i - start);
+
+                for (int j = 0; j < remaining; j++) {
+                    cycle(grid);
+                }
+                System.out.println("Day 14 Part 2: " + calculateWeightOnNorthColumns(grid));
+                break;
+            } else {
+                // Keep the current grid state for later
+                previouslySeenMapConfigurations.put(i, mapState);
+            }
+        }
+    }
+
     private Map<String, Character> readGrid(Scanner scanner) {
         Map<String, Character> grid = new LinkedHashMap<>();
 
@@ -41,7 +72,7 @@ public class Day14 {
             for (int col = 0; col < line.length(); col++) {
                 Character c = line.charAt(col);
 
-                String coord = "" + row + "_" + col;
+                String coord = coordinatesToString(row, col);
                 grid.put(coord, c);
             }
             row += 1;
@@ -56,7 +87,7 @@ public class Day14 {
         for (int row = 0; row < ROWS; row++) {
             System.out.print("|");
             for (int col = 0; col < COLS; col++) {
-                String coord = "" + row + "_" + col;
+                String coord = coordinatesToString(row, col);
                 System.out.printf("%s", grid.get(coord));
             }
             System.out.println("|");
@@ -68,11 +99,11 @@ public class Day14 {
         StringBuilder sb = new StringBuilder();
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {
-                String coord = "" + row + "_" + col;
+                String coord = coordinatesToString(row, col);
                 Character c = grid.get(coord);
                 sb.append(c);
             }
-            sb.append("\n");
+            sb.append("|");
         }
 
         return sb.toString();
@@ -94,21 +125,119 @@ public class Day14 {
                         String northCoord = coordinatesToString(northRow, col);
 
                         Character northC = grid.get(northCoord);
-                        if (northC == '#' || northC == 'O')
+                        if (northC == '#')
                             break;
                         if (northC == '.')
                             northMostCoord = northCoord;
                     }
 
                     if (!northMostCoord.isBlank()) {
-                        // System.out.printf("Move [%s] from [%s] to [%s]\n", c, coord, northMostCoord);
                         grid.put(coord, '.');
                         grid.put(northMostCoord, 'O');
-                        // printGrid(grid);
                     }
                 }
             }
         }
+    }
+
+    private void shiftWest(Map<String, Character> grid) {
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                String coord = coordinatesToString(row, col);
+                Character c = grid.get(coord);
+
+                if (c == '.' || c == '#')
+                    continue;
+
+                // Determine settle spot
+                if (col > 0) {
+                    String westMostCoord = "";
+                    for (int westCol = col - 1; westCol >= 0; westCol--) {
+                        String westCoord = coordinatesToString(row, westCol);
+
+                        Character westC = grid.get(westCoord);
+                        if (westC == '#' || westC == 'O')
+                            break;
+                        if (westC == '.')
+                            westMostCoord = westCoord;
+                    }
+
+                    if (!westMostCoord.isBlank()) {
+                        grid.put(coord, '.');
+                        grid.put(westMostCoord, 'O');
+                    }
+                }
+            }
+        }
+    }
+
+    private void shiftSouth(Map<String, Character> grid) {
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                String coord = coordinatesToString(row, col);
+                Character c = grid.get(coord);
+
+                if (c == '.' || c == '#')
+                    continue;
+
+                // Determine settle spot
+                if (row < ROWS) {
+                    String southMostCoord = "";
+                    for (int southRow = row + 1; southRow < ROWS; southRow++) {
+                        String southCoord = coordinatesToString(southRow, col);
+
+                        Character southC = grid.get(southCoord);
+                        if (southC == '#')
+                            break;
+                        if (southC == '.')
+                            southMostCoord = southCoord;
+                    }
+
+                    if (!southMostCoord.isBlank()) {
+                        grid.put(coord, '.');
+                        grid.put(southMostCoord, 'O');
+                    }
+                }
+            }
+        }
+    }
+
+    private void shiftEast(Map<String, Character> grid) {
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                String coord = coordinatesToString(row, col);
+                Character c = grid.get(coord);
+
+                if (c == '.' || c == '#')
+                    continue;
+
+                // Determine settle spot
+                if (col < COLS) {
+                    String eastMostCoord = "";
+                    for (int eastCol = col + 1; eastCol < COLS; eastCol++) {
+                        String eastCoord = coordinatesToString(row, eastCol);
+
+                        Character eastC = grid.get(eastCoord);
+                        if (eastC == '#')
+                            break;
+                        if (eastC == '.')
+                            eastMostCoord = eastCoord;
+                    }
+
+                    if (!eastMostCoord.isBlank()) {
+                        grid.put(coord, '.');
+                        grid.put(eastMostCoord, 'O');
+                    }
+                }
+            }
+        }
+    }
+
+    private void cycle(Map<String, Character> grid) {
+        shiftNorth(grid);
+        shiftWest(grid);
+        shiftSouth(grid);
+        shiftEast(grid);
     }
 
     private long calculateWeightOnNorthColumns(Map<String, Character> grid) {
@@ -116,13 +245,11 @@ public class Day14 {
 
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {
-                String coord = "" + row + "_" + col;
+                String coord = coordinatesToString(row, col);
                 Character c = grid.get(coord);
 
                 if (c == 'O') {
-                    long weight = ROWS - row;
-                    // System.out.printf("Weight of O at [%s] is: [%d]\n", coord, weight);
-                    total += weight;
+                    total += (ROWS - row);
                 }
             }
         }
