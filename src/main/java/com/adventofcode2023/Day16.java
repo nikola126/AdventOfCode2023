@@ -12,6 +12,7 @@ public class Day16 {
     public Day16() {
         try {
             partOne();
+            partTwo();
         } catch (Exception e) {
             System.out.println("Error with Day 16: " + e.getMessage());
         }
@@ -30,6 +31,48 @@ public class Day16 {
         navigate(grid, 0, 0, true, null);
 
         System.out.println("Day 16 Part 1: " + energizedCells.size());
+    }
+
+    public void partTwo() throws FileNotFoundException {
+        scanner = new Scanner(file);
+
+        List<List<String>> grid = readGrid(scanner);
+
+        int maxEnergy = -1;
+
+        // Top edge
+        for (int i = 0; i < COLS; i++) {
+            rayStates.clear();
+            energizedCells.clear();
+            navigate(grid, 0, i, null, true);
+            maxEnergy = Math.max(maxEnergy, energizedCells.size());
+        }
+
+        // Left edge
+        for (int i = 0; i < ROWS; i++) {
+            rayStates.clear();
+            energizedCells.clear();
+            navigate(grid, i, 0, true, null);
+            maxEnergy = Math.max(maxEnergy, energizedCells.size());
+        }
+
+        // Right edge
+        for (int i = 0; i < ROWS; i++) {
+            rayStates.clear();
+            energizedCells.clear();
+            navigate(grid, i, COLS - 1, false, null);
+            maxEnergy = Math.max(maxEnergy, energizedCells.size());
+        }
+
+        // Bottom edge
+        for (int i = 0; i < COLS; i++) {
+            rayStates.clear();
+            energizedCells.clear();
+            navigate(grid, ROWS - 1, i, null, false);
+            maxEnergy = Math.max(maxEnergy, energizedCells.size());
+        }
+
+        System.out.println("Day 16 Part 2: " + maxEnergy);
     }
 
     private List<List<String>> readGrid(Scanner scanner) {
@@ -61,30 +104,14 @@ public class Day16 {
 
         String c = grid.get(currentRow).get(currentCol);
 
+        energizedCells.add(String.format("[%d][%d]", currentRow, currentCol));
+
         if (!rayStates.add(rayStateToString(currentRow, currentCol, leftToRight, topToBottom))) {
             return;
         }
 
-        energizedCells.add(String.format("[%d][%d]", currentRow, currentCol));
-
         switch (c) {
-            case "." -> {
-                // Energize, and keep moving in the same direction
-                grid.get(currentRow).set(currentCol, "#");
-                if (leftToRight != null) {
-                    if (leftToRight) {
-                        navigate(grid, currentRow, currentCol + 1, leftToRight, null);
-                    } else {
-                        navigate(grid, currentRow, currentCol - 1, leftToRight, null);
-                    }
-                } else if (topToBottom != null) {
-                    if (topToBottom) {
-                        navigate(grid, currentRow + 1, currentCol, null, topToBottom);
-                    } else {
-                        navigate(grid, currentRow - 1, currentCol, null, topToBottom);
-                    }
-                }
-            }
+            // Energize, and keep moving in the same direction
             case "/" -> {
                 if (leftToRight != null) {
                     if (leftToRight) {
@@ -117,13 +144,8 @@ public class Day16 {
             }
             case "|" -> {
                 if (leftToRight != null) {
-                    if (leftToRight) {
-                        navigate(grid, currentRow - 1, currentCol, null, false);
-                        navigate(grid, currentRow + 1, currentCol, null, true);
-                    } else {
-                        navigate(grid, currentRow - 1, currentCol, null, false);
-                        navigate(grid, currentRow + 1, currentCol, null, true);
-                    }
+                    navigate(grid, currentRow - 1, currentCol, null, false);
+                    navigate(grid, currentRow + 1, currentCol, null, true);
                 } else if (topToBottom != null) {
                     if (topToBottom) {
                         navigate(grid, currentRow + 1, currentCol, null, true);
@@ -135,39 +157,30 @@ public class Day16 {
             case "-" -> {
                 if (leftToRight != null) {
                     if (leftToRight) {
-                        navigate(grid, currentRow, currentCol + 1, leftToRight, null);
+                        navigate(grid, currentRow, currentCol + 1, true, null);
                     } else {
-                        navigate(grid, currentRow, currentCol - 1, leftToRight, null);
+                        navigate(grid, currentRow, currentCol - 1, false, null);
                     }
                 } else if (topToBottom != null) {
-                    if (topToBottom) {
-                        navigate(grid, currentRow, currentCol - 1, false, null);
-                        navigate(grid, currentRow, currentCol + 1, true, null);
-                    } else {
-                        navigate(grid, currentRow, currentCol - 1, false, null);
-                        navigate(grid, currentRow, currentCol + 1, true, null);
-                    }
+                    navigate(grid, currentRow, currentCol - 1, false, null);
+                    navigate(grid, currentRow, currentCol + 1, true, null);
                 }
             }
             default -> {
-                // on a ray
+                // Already on a ray
                 // Energize and keep moving in the same direction
-                if (c.equals("#")) {
-                    grid.get(currentRow).set(currentCol, "2");
-                } else {
-                    grid.get(currentRow).set(currentCol, String.valueOf(Integer.parseInt(c) + 1));
-                }
+                grid.get(currentRow).set(currentCol, "#");
                 if (leftToRight != null) {
                     if (leftToRight) {
-                        navigate(grid, currentRow, currentCol + 1, leftToRight, null);
+                        navigate(grid, currentRow, currentCol + 1, true, null);
                     } else {
-                        navigate(grid, currentRow, currentCol - 1, leftToRight, null);
+                        navigate(grid, currentRow, currentCol - 1, false, null);
                     }
                 } else if (topToBottom != null) {
                     if (topToBottom) {
-                        navigate(grid, currentRow + 1, currentCol, null, topToBottom);
+                        navigate(grid, currentRow + 1, currentCol, null, true);
                     } else {
-                        navigate(grid, currentRow - 1, currentCol, null, topToBottom);
+                        navigate(grid, currentRow - 1, currentCol, null, false);
                     }
                 }
             }
