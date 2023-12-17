@@ -16,6 +16,7 @@ public class Day17 {
     public Day17() {
         try {
             partOne();
+            partTwo();
         } catch (Exception e) {
             System.out.println("Error with Day 17: " + e.getMessage());
         }
@@ -105,6 +106,99 @@ public class Day17 {
                                 1);
 
                         priorityQueue.add(nextPoint);
+                    }
+                }
+            }
+        }
+    }
+
+    // Based on https://github.com/hyper-neutrino/advent-of-code
+    public void partTwo() throws FileNotFoundException {
+        scanner = new Scanner(file);
+
+        List<List<Integer>> grid = readGrid(scanner);
+
+        int ROWS = grid.size();
+        int COLS = grid.getFirst().size();
+
+
+        PriorityQueue<CruciblePoint> priorityQueue = new PriorityQueue<>();
+
+        // keeps track of the different ways the crucible enters a given point
+        // row, col, directionRow, directionCol and sameDirectionSteps matter
+        // heat is NOT included, because it's incremented after each step, and the loop will NOT be detected!
+        Set<String> visited = new HashSet<>();
+
+        // starting at top left, with zero heat, no previous movement and zero steps
+        priorityQueue.add(new CruciblePoint(0, 0, 0, 0, 0, 0));
+
+        while (!priorityQueue.isEmpty()) {
+            CruciblePoint point = priorityQueue.poll();
+
+            // End is reached, but the crucible must have at least 4 steps in the same direction
+            if (point.getRow() == ROWS - 1 && point.getCol() == COLS - 1 && point.getSameDirectionSteps() >= 4) {
+                System.out.println("Day 17 Part 2: " + point.getHeat());
+                return;
+            }
+
+            // Loop detected, this step can be skipped
+            if (!visited.add(point.toStateString())) {
+                continue;
+            }
+
+            // Keep moving in the same direction if and only if less than 10 steps have already been accumulated
+            // and the crucible was previously moving (true every time except at the start)
+            if (point.getSameDirectionSteps() < 10 && !(point.getDirectionRow() == 0 && point.getDirectionCol() == 0)) {
+                int nextRow = point.getRow() + point.getDirectionRow();
+                int nextCol = point.getCol() + point.getDirectionCol();
+
+                // ignore ouf-of-bounds
+                if ((0 <= nextRow && nextRow < ROWS) && (0 <= nextCol && nextCol < COLS)) {
+                    // increment heat and same direction step counter
+                    CruciblePoint nextPoint = new CruciblePoint(
+                            nextRow, nextCol,
+                            point.getHeat() + grid.get(nextRow).get(nextCol),
+                            point.getDirectionRow(), point.getDirectionCol(),
+                            point.getSameDirectionSteps() + 1);
+
+                    priorityQueue.add(nextPoint);
+                }
+            }
+
+            // Try turning only if the crucible was already moving for 4 steps
+            // Add exception for the start point when the crucible is not moving at all
+            if (point.getSameDirectionSteps() >= 4 || (point.getDirectionRow() == 0 && point.getDirectionCol() == 0)) {
+                List<String> directions = new ArrayList<>();
+                directions.add("-1 0"); // left
+                directions.add("1 0"); // right
+                directions.add("0 -1"); // up
+                directions.add("0 1"); // down
+
+                for (String direction : directions) {
+                    int directionRow = Integer.parseInt(direction.split(" ")[0]);
+                    int directionCol = Integer.parseInt(direction.split(" ")[1]);
+
+                    // same direction is already covered in the previous case
+                    boolean isInSameDirection = directionRow == point.getDirectionRow() && directionCol == point.getDirectionCol();
+
+                    // the crucible cannot turn!
+                    boolean isInReverseDirection = directionRow == -point.getDirectionRow() && directionCol == -point.getDirectionCol();
+
+                    if (!isInSameDirection && !isInReverseDirection) {
+                        int nextRow = point.getRow() + directionRow;
+                        int nextCol = point.getCol() + directionCol;
+
+                        // ignore ouf-of-bounds
+                        if ((0 <= nextRow && nextRow < ROWS) && (0 <= nextCol && nextCol < COLS)) {
+                            // increment heat, reset steps counter
+                            CruciblePoint nextPoint = new CruciblePoint(
+                                    nextRow, nextCol,
+                                    point.getHeat() + grid.get(nextRow).get(nextCol),
+                                    directionRow, directionCol,
+                                    1);
+
+                            priorityQueue.add(nextPoint);
+                        }
                     }
                 }
             }
