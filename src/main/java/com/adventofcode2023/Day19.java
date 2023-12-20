@@ -33,33 +33,10 @@ public class Day19 {
             workflowMap.put(workflow.getName(), workflow);
 
         List<Part> accepted = new ArrayList<>();
-        List<Part> rejected = new ArrayList<>();
 
         for (Part part : parts) {
-            String output = "";
-            Workflow workflow = workflowMap.get("in");
-            int ruleIndex = 0;
-            String rule = workflow.getRules().getFirst();
-
-            while (true) {
-                output = evaluateRule(part, rule);
-
-                if (output.isBlank()) {
-                    rule = workflow.getRules().get(++ruleIndex);
-                } else if (output.equals("A")) {
-                    accepted.add(part);
-                    break;
-                }
-                else if (output.equals("R")) {
-                    rejected.add(part);
-                    break;
-                }
-                else {
-                    workflow = workflowMap.get(output);
-                    ruleIndex = 0;
-                    rule = workflow.getRules().getFirst();
-                }
-            }
+            if (evaluatePart(part, workflowMap))
+                accepted.add(part);
         }
 
         long sum = 0;
@@ -105,6 +82,76 @@ public class Day19 {
 
     }
 
+    private String evaluateRule(Part part, String ruleText) {
+        if (ruleText.contains("<")) {
+            String s = ruleText.split("<")[0].trim();
+            String val = ruleText.split("<")[1].split(":")[0].trim();
+            String out = ruleText.split(":")[1].trim();
+
+            int operand1 = switch (s) {
+                case "x" -> part.getX();
+                case "m" -> part.getM();
+                case "a" -> part.getA();
+                case "s" -> part.getS();
+                default -> throw new IllegalArgumentException("Unknown part!");
+            };
+
+            int operand2 = Integer.parseInt(val);
+
+            if (operand1 < operand2)
+                return out;
+            else
+                return "";
+        } else if (ruleText.contains(">")) {
+            String s = ruleText.split(">")[0].trim();
+            String val = ruleText.split(">")[1].split(":")[0].trim();
+            String out = ruleText.split(":")[1].trim();
+
+            int operand1 = switch (s) {
+                case "x" -> part.getX();
+                case "m" -> part.getM();
+                case "a" -> part.getA();
+                case "s" -> part.getS();
+                default -> throw new IllegalArgumentException("Unknown part!");
+            };
+
+            int operand2 = Integer.parseInt(val);
+
+            if (operand1 > operand2)
+                return out;
+            else
+                return "";
+        } else {
+            // accepted, rejected or next workflow
+            return ruleText;
+        }
+    }
+
+    private boolean evaluatePart(Part part, Map<String, Workflow> workflowMap) {
+        String output;
+        Workflow workflow = workflowMap.get("in");
+        int ruleIndex = 0;
+        String rule = workflow.getRules().getFirst();
+
+        while (true) {
+            output = evaluateRule(part, rule);
+
+            if (output.isBlank()) {
+                rule = workflow.getRules().get(++ruleIndex);
+            } else if (output.equals("A")) {
+                return true;
+            }
+            else if (output.equals("R")) {
+                return false;
+            }
+            else {
+                workflow = workflowMap.get(output);
+                ruleIndex = 0;
+                rule = workflow.getRules().getFirst();
+            }
+        }
+    }
+
     @AllArgsConstructor
     @Getter
     @Setter
@@ -137,49 +184,5 @@ public class Day19 {
         }
     }
 
-    private String evaluateRule(Part part, String ruleText) {
-        if (ruleText.contains("<")) {
-            String s = ruleText.split("<")[0].trim();
-            String val = ruleText.split("<")[1].split(":")[0].trim();
-            String out = ruleText.split(":")[1].trim();
-
-            int oper1 = switch (s) {
-                case "x" -> part.getX();
-                case "m" -> part.getM();
-                case "a" -> part.getA();
-                case "s" -> part.getS();
-                default -> throw new IllegalArgumentException("Unknown part!");
-            };
-
-            int oper2 = Integer.parseInt(val);
-
-            if (oper1 < oper2)
-                return out;
-            else
-                return "";
-        } else if (ruleText.contains(">")) {
-            String s = ruleText.split(">")[0].trim();
-            String val = ruleText.split(">")[1].split(":")[0].trim();
-            String out = ruleText.split(":")[1].trim();
-
-            int oper1 = switch (s) {
-                case "x" -> part.getX();
-                case "m" -> part.getM();
-                case "a" -> part.getA();
-                case "s" -> part.getS();
-                default -> throw new IllegalArgumentException("Unknown part!");
-            };
-
-            int oper2 = Integer.parseInt(val);
-
-            if (oper1 > oper2)
-                return out;
-            else
-                return "";
-        } else {
-            // accepted, rejected or next workflow
-            return ruleText;
-        }
-    }
 
 }
