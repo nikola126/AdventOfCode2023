@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.math.BigDecimal;
 import java.util.*;
 
 public class Day21 {
@@ -109,6 +110,13 @@ public class Day21 {
         long answer2 = 0L;
         long answer3 = 0L;
 
+        // Because the grid is square, repeating, and with no obstacles in the starting row and column,
+        // the number of steps should increase exponentially with every copy, and the number of steps for
+        // (ROWS / 2) * (ROWS * 0),
+        // (ROWS / 2) * (ROWS * 1) and
+        // (ROWS / 2) * (ROWS * 2)
+        // are actually parameters of a 2nd degree polynomial
+        // which should be solved for x = (26501365 - ROWS / 2) / ROWS
         Map<Integer, Set<Point>> stepsToVisitedMap = new LinkedHashMap<>();
 
         navigate(startingPoint.getX(), startingPoint.getY(), 65, grid, ROWS, COLS, stepsToVisitedMap);
@@ -122,24 +130,12 @@ public class Day21 {
         navigate(startingPoint.getX(), startingPoint.getY(), 65 + (131 * 2), grid, ROWS, COLS, stepsToVisitedMap);
         answer3 = stepsToVisitedMap.get(0).size();
 
-        long a = answer1 / 2 - answer2 + answer3 / 2;
-        long b = -3 * (answer1 / 2) + 2 * answer2 - answer3 / 2;
-        long c = answer1;
-
-        System.out.printf("A1:[%d] A2:[%d] A3:[%d]\n", answer1, answer2, answer3);
-        System.out.printf("A:[%d] B:[%d] C:[%d]\n", a, b, c);
-
-        long target = (26501365L - 65L) / 131L;
-        long answer = a * target * target + b * target + c;
-
-        System.out.printf("Ax^2 + Bx + C = y\n");
-        System.out.printf("%d * %d ^2 + %d * %d + %d = %d\n", a, target, b, target, c, answer);
-
-        System.out.println("Day 21 Part 2: " + answer);
+        solve(answer1, answer2, answer3);
 
     }
 
     private void navigate(int row, int col, int stepsRemaining, Character[][] grid, int ROWS, int COLS,Map<Integer, Set<Point>> stepsToVisitedMap) {
+        // keep the originals but clamp the coordinates, so they fit in the current grid size
         int originalRow = row;
         int originalCol = col;
 
@@ -150,6 +146,8 @@ public class Day21 {
         col = col % COLS;
         if (col < 0)
             col = COLS + col;
+
+        // no need to check out-of-bounds if grid keeps repeating
 
         // return if it's a rock
         if (grid[row][col] == '#')
@@ -184,6 +182,35 @@ public class Day21 {
         navigate(originalRow + 1, originalCol, stepsRemaining - 1, grid, ROWS, COLS, stepsToVisitedMap);
     }
 
+    private void solve(long answer1, long answer2, long answer3) {
+
+        // f(x) = (x^2 - 3x + 2) * (y0 / 2) - (x^2 - 2x) * (y1) + (x^2 - x) * (y2 / 2)
+        // x = [0, 1, 2]
+        // y = [y0, y1, y2]
+        BigDecimal y0 = BigDecimal.valueOf(answer1);
+        BigDecimal y1 = BigDecimal.valueOf(answer2);
+        BigDecimal y2 = BigDecimal.valueOf(answer3);
+
+        // a = (y0 / 2) - y1 + (y2 / 2)
+        BigDecimal a = y0.divide(BigDecimal.valueOf(2)).subtract(y1).add((y2.divide(BigDecimal.valueOf(2))));
+
+        // b = -3 * (y0 / 2) + 2 * y1 - y2 / 2
+        BigDecimal bPartOne = BigDecimal.valueOf(-3).multiply(y0).divide(BigDecimal.valueOf(2));
+        BigDecimal bPartTwo = BigDecimal.valueOf(2).multiply(y1);
+        BigDecimal bPartThree = y2.divide(BigDecimal.valueOf(2));
+
+        BigDecimal b = bPartOne.add(bPartTwo).subtract(bPartThree);
+
+        // c = y0
+        BigDecimal c = y0;
+
+        BigDecimal x = BigDecimal.valueOf((26501365L - 65L) / 131L);
+
+        // f(x) = ax^2 + bx + c
+        BigDecimal answer = a.multiply(x).multiply(x).add(b.multiply(x)).add(c);
+        System.out.println("Day 21 Part 2: " + answer.toBigInteger());
+    }
+
     @AllArgsConstructor
     @NoArgsConstructor
     @Getter
@@ -216,4 +243,5 @@ public class Day21 {
             return String.format("[%d][%d]", x, y);
         }
     }
+
 }
