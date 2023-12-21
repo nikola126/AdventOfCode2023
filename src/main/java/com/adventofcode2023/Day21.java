@@ -17,6 +17,7 @@ public class Day21 {
     public Day21() {
         try {
             partOne();
+            partTwo();
         } catch (Exception e) {
             System.out.println("Error with Day 21: " + e.getMessage());
         }
@@ -68,16 +69,93 @@ public class Day21 {
         System.out.println("Day 21 Part 1: " + visitedAtLastStep.size());
     }
 
+    // Entirely based on https://pastebin.com/d0tD8Uwx
+    public void partTwo() throws FileNotFoundException {
+        scanner = new Scanner(file);
+
+        List<String> lines = new ArrayList<>();
+        int ROWS = 0;
+        int COLS = 0;
+
+        while (scanner.hasNextLine()) {
+            String line = scanner.nextLine();
+            lines.add(line);
+            COLS = line.length();
+            ROWS += 1;
+        }
+
+        Character[][] grid = new Character[ROWS][COLS];
+
+        for (int row = 0; row < lines.size(); row++) {
+            String line = lines.get(row);
+            for (int col = 0; col < line.length(); col++) {
+                grid[row][col] = line.charAt(col);
+            }
+        }
+
+        // Determine starting position
+        Point startingPoint = null;
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                if (grid[row][col] == 'S') {
+                    startingPoint = new Point(row, col);
+                    break;
+                }
+            }
+        }
+
+        // keep track of the number of unique points you can visit (value) after every step (key)
+        long answer1 = 0L;
+        long answer2 = 0L;
+        long answer3 = 0L;
+
+        Map<Integer, Set<Point>> stepsToVisitedMap = new LinkedHashMap<>();
+
+        navigate(startingPoint.getX(), startingPoint.getY(), 65, grid, ROWS, COLS, stepsToVisitedMap);
+        answer1 = stepsToVisitedMap.get(0).size();
+
+        stepsToVisitedMap.clear();
+        navigate(startingPoint.getX(), startingPoint.getY(), 65 + 131, grid, ROWS, COLS, stepsToVisitedMap);
+        answer2 = stepsToVisitedMap.get(0).size();
+
+        stepsToVisitedMap.clear();
+        navigate(startingPoint.getX(), startingPoint.getY(), 65 + (131 * 2), grid, ROWS, COLS, stepsToVisitedMap);
+        answer3 = stepsToVisitedMap.get(0).size();
+
+        long a = answer1 / 2 - answer2 + answer3 / 2;
+        long b = -3 * (answer1 / 2) + 2 * answer2 - answer3 / 2;
+        long c = answer1;
+
+        System.out.printf("A1:[%d] A2:[%d] A3:[%d]\n", answer1, answer2, answer3);
+        System.out.printf("A:[%d] B:[%d] C:[%d]\n", a, b, c);
+
+        long target = (26501365L - 65L) / 131L;
+        long answer = a * target * target + b * target + c;
+
+        System.out.printf("Ax^2 + Bx + C = y\n");
+        System.out.printf("%d * %d ^2 + %d * %d + %d = %d\n", a, target, b, target, c, answer);
+
+        System.out.println("Day 21 Part 2: " + answer);
+
+    }
+
     private void navigate(int row, int col, int stepsRemaining, Character[][] grid, int ROWS, int COLS,Map<Integer, Set<Point>> stepsToVisitedMap) {
-        // return if out of bounds
-        if (row < 0 || row >= ROWS || col < 0 || col >= COLS)
-            return;
+        int originalRow = row;
+        int originalCol = col;
+
+        row = row % ROWS;
+        if (row < 0)
+            row = ROWS + row;
+
+        col = col % COLS;
+        if (col < 0)
+            col = COLS + col;
 
         // return if it's a rock
         if (grid[row][col] == '#')
             return;
 
-        Point currentPoint = new Point(row, col);
+        Point currentPoint = new Point(originalRow, originalCol);
 
         Set<Point> visited = stepsToVisitedMap.getOrDefault(stepsRemaining, new HashSet<>());
 
@@ -97,13 +175,13 @@ public class Day21 {
         // keep navigating in 4 directions with 1 less step
 
         // UP
-        navigate(row - 1, col, stepsRemaining - 1, grid, ROWS, COLS, stepsToVisitedMap);
+        navigate(originalRow - 1, originalCol, stepsRemaining - 1, grid, ROWS, COLS, stepsToVisitedMap);
         // LEFT
-        navigate(row, col - 1, stepsRemaining - 1, grid, ROWS, COLS, stepsToVisitedMap);
+        navigate(originalRow, originalCol - 1, stepsRemaining - 1, grid, ROWS, COLS, stepsToVisitedMap);
         // RIGHT
-        navigate(row, col + 1, stepsRemaining - 1, grid, ROWS, COLS, stepsToVisitedMap);
+        navigate(originalRow, originalCol + 1, stepsRemaining - 1, grid, ROWS, COLS, stepsToVisitedMap);
         // DOWN
-        navigate(row + 1, col, stepsRemaining - 1, grid, ROWS, COLS, stepsToVisitedMap);
+        navigate(originalRow + 1, originalCol, stepsRemaining - 1, grid, ROWS, COLS, stepsToVisitedMap);
     }
 
     @AllArgsConstructor
